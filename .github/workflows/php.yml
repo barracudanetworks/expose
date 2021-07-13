@@ -15,7 +15,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: php-actions/composer@master
       with:
-        php_version: 7.3
+        php_version: 7.4
         ssh_key: ${{ secrets.SSH_KEY }}
         ssh_key_pub: ${{ secrets.SSH_KEY_PUB }}
         command: install
