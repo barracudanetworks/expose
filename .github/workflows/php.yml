@@ -18,7 +18,7 @@ jobs:
         php_version: 7.3
     
     - name: Check PHP version
-      run: php -V
+      run: php -v
 
     - name: Validate composer.json and composer.lock
       run: composer validate --strict
@@ -33,7 +33,7 @@ jobs:
           ${{ runner.os }}-php-
 
     - name: Check PHP version2
-      run: php -V
+      run: php -v
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
