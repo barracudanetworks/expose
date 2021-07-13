@@ -29,9 +29,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-
     
-
-    - name: Install dependencies
+    - name: "use PHP version"
       uses: php-actions/composer@v6
       with:
         php_version: 7.3
+
+    - name: Install dependencies
       run: composer install --prefer-dist --no-progress
