@@ -13,10 +13,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: php-actions/composer@v6
-      with:
-        php_version: 7.3
-    
-    - run: php -v
-    - run: composer validate --strict
-    - run: composer install --prefer-dist --no-progress
+    - uses: php-actions/composer@master
+        with:
+          php_version: 7.3
+          ssh_key: ${{ secrets.SSH_KEY }}
+          ssh_key_pub: ${{ secrets.SSH_KEY_PUB }}
+          command: install
+          args: --no-interaction
