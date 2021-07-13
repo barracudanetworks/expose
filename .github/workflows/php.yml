@@ -16,6 +16,9 @@ jobs:
     - uses: php-actions/composer@v6
       with:
         php_version: 7.3
+    
+    - name: Check PHP version
+      run: php -V
 
     - name: Validate composer.json and composer.lock
       run: composer validate --strict
@@ -28,11 +31,9 @@ jobs:
         key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
         restore-keys: |
           ${{ runner.os }}-php-
-    
-    - name: "use PHP version"
-      uses: php-actions/composer@v6
-      with:
-        php_version: 7.3
+
+    - name: Check PHP version2
+      run: php -V
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
