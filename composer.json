@@ -1,17 +1,11 @@
 {
-    "name":"enygma/expose",
+    "name":"barracudanetworks/expose",
+    "version": "4.0.0",
     "type":"library",
     "description":"An intrusion detection library based on PHPIDS",
     "keywords":["ids","intrusion","detection"],
-    "homepage":"https://github.com/enygma/expose.git",
+    "homepage":"https://github.com/barracudanetworks/expose.git",
     "license":"MIT",
-    "authors":[
-        {
-            "name":"Chris Cornutt",
-            "email":"ccornutt@phpdeveloper.org",
-            "homepage":"http://www.phpdeveloper.org/"
-        }
-    ],
     "require":{
         "php":">=7.2",
         "twig/twig": "~3.0",
