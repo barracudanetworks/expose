@@ -1,9 +1,6 @@
 Expose: an IDS for PHP
 =========================
 
-[![Build Status](https://secure.travis-ci.org/enygma/expose.png?branch=master)](http://travis-ci.org/enygma/expose)
-![Insight Rating](https://insight.sensiolabs.com/projects/225eb78a-5af9-4ded-891c-6f04fb709362/small.png)
-
 Expose is an Intrusion Detection System for PHP loosely based on the PHPIDS project (and using its ruleset
 for detecting potential threats).
 
@@ -27,7 +24,7 @@ for more information on a layered security approach.
 1. Require Expose as a dependency using Composer:
 
     ```
-    php composer.phar require enygma/expose
+    php composer.phar require barracudanetworks/expose
     ```
 
 1. Install Expose:
@@ -73,7 +70,10 @@ echo "\n\n";
 
 ```
 
-### Full Documentation
+### Parent Project Documentation
+
+Parent GitHub
+[https://github.com/enygma/expose]
 
 Full (current) documentation for Expose can be found here: [ReadTheDocs for Expose](https://expose.readthedocs.org/en/latest/)
 
@@ -84,6 +84,11 @@ Feel free to contact me with questions or how you can help the project!
 
 @author Chris Cornutt <ccornutt@phpdeveloper.org>
 
+### Reason For Fork
 
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/enygma/expose/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+The above project has not been maintained and is no longer compatible with current versions of PHP.
 
+Currently supported versions:
+- PHP 7.2
+- PHP 7.3
+- PHP 7.4
