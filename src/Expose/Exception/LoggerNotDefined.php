@@ -2,7 +2,9 @@
 
 namespace Expose\Exception;
 
-class LoggerNotDefined extends \Exception
+use Exception;
+
+class LoggerNotDefined extends Exception
 {
 
 }

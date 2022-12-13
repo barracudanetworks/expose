@@ -2,14 +2,10 @@
 
 namespace Expose;
 
-use Expose\Exception\QueueNotDefined;
-use Expose\Log\Mongo;
-use Expose\Notify\Email;
-use Expose\Queue\MockQueue;
+use Expose\MockListener;
 use PHPUnit\Framework\TestCase;
-
-require_once 'MockLogger.php';
-require_once 'MockQueue.php';
+use Psr\EventDispatcher\ListenerProviderInterface;
+use Psr\Log\LoggerInterface;
 
 class ManagerTest extends TestCase
 {
@@ -27,9 +23,8 @@ class ManagerTest extends TestCase
 
     public function setUp(): void
     {
-        $logger = new Mongo();
         $filters = new FilterCollection();
-        $this->manager = new Manager($filters, $logger);
+        $this->manager = new Manager($filters, $this->createStub(LoggerInterface::class));
     }
 
     public function executeFilters($data, $queue = false, $notify = false)
@@ -37,7 +32,7 @@ class ManagerTest extends TestCase
         $filterCollection = new FilterCollection();
         $filterCollection->setFilterData($this->sampleFilters);
 
-        $logger = new MockLogger();
+        $logger = $this->createStub(LoggerInterface::class);
         $manager = new Manager($filterCollection, $logger);
         $manager->setConfig(array('test' => 'foo'));
         $manager->run($data, $queue, $notify);
@@ -137,7 +132,7 @@ class ManagerTest extends TestCase
         $filterCollection = new FilterCollection();
         $filterCollection->setFilterData($this->sampleFilters);
 
-        $logger = new MockLogger();
+        $logger = $this->createStub(LoggerInterface::class);
         $manager = new Manager($filterCollection, $logger);
         $manager->setImpactLimit(1);
         $manager->setConfig(array('test' => 'foo'));
@@ -283,7 +278,7 @@ class ManagerTest extends TestCase
         $filterCollection = new FilterCollection();
         $filterCollection->setFilterData($this->sampleFilters);
 
-        $logger = new MockLogger();
+        $logger = $this->createStub(LoggerInterface::class);
         $manager = new Manager($filterCollection, $logger);
         $manager->setConfig(array('test' => 'foo'));
         $manager->setException('POST.foo');
@@ -313,7 +308,7 @@ class ManagerTest extends TestCase
         $filterCollection = new FilterCollection();
         $filterCollection->setFilterData($this->sampleFilters);
 
-        $logger = new MockLogger();
+        $logger = $this->createStub(LoggerInterface::class);
         $manager = new Manager($filterCollection, $logger);
         $manager->setConfig(array('test' => 'foo'));
         $manager->setException('POST.foo[0-9]+');
@@ -328,52 +323,6 @@ class ManagerTest extends TestCase
         $this->assertEquals($manager->getImpact(), 0);
     }
 
-    /**
-     * Test the getter/setter for the Queue object
-     *
-     * @covers \Expose\Manager::setQueue
-     * @covers \Expose\Manager::getQueue
-     */
-    public function testGetSetQueue()
-    {
-        $queue = new MockQueue();
-
-        $this->manager->setQueue($queue);
-        $this->assertEquals(
-            $this->manager->getQueue(),
-            $queue
-        );
-    }
-
-    /**
-     * Getting the default queue object without setting it
-     *     first gives us an exception
-     *
-     * @covers \Expose\Manager::getQueue
-     */
-    public function testGetUndefinedQueue()
-    {
-        $this->expectException(QueueNotDefined::class);
-        $queue = $this->manager->getQueue();
-    }
-
-    /**
-     * Test the getter/setter for the notification method
-     *
-     * @covers \Expose\Manager::getNotify
-     * @covers \Expose\Manager::setNotify
-     */
-    public function testGetSetNotify()
-    {
-        $notify = new Email();
-
-        $this->manager->setNotify($notify);
-        $this->assertEquals(
-            $this->manager->getNotify(),
-            $notify
-        );
-    }
-
     public function testThresholdLowerThenImpact() {
 
         $filter = new Filter();
@@ -383,14 +332,14 @@ class ManagerTest extends TestCase
         $collection->addFilter($filter);
 
         $manager_mock = $this->getMockBuilder('\\Expose\\Manager')
-            ->setConstructorArgs(array($collection, new MockLogger()))
-            ->setMethods(array('sendNotification'))
+            ->setConstructorArgs(array($collection, $this->createStub(LoggerInterface::class)))
+            ->setMethods(array('dispatch'))
             ->getMock();
 
         $manager_mock
            ->expects($this->once())
-           ->method('sendNotification')
-           ->with(array($filter));
+           ->method('dispatch')
+           ->with(new FilterEvent(array($filter)));
 
         $manager_mock->setThreshold(7);
         $manager_mock->run(array('test' => 'test'), false, true);
@@ -404,7 +353,7 @@ class ManagerTest extends TestCase
         $collection->addFilter($filter);
 
         $manager_mock = $this->getMockBuilder('\\Expose\\Manager')
-            ->setConstructorArgs(array($collection, new MockLogger()))
+            ->setConstructorArgs(array($collection, $this->createStub(LoggerInterface::class)))
             ->setMethods(array('sendNotification'))
             ->getMock();
 
@@ -414,5 +363,34 @@ class ManagerTest extends TestCase
 
         $manager_mock->setThreshold(100);
         $manager_mock->run(array('test' => 'test'), false, true);
+    }
+
+    public function testDispatch()
+    {
+        $filters = [
+            (new Filter())
+                ->setId(1)
+                ->setDescription('foo')
+                ->setImpact(5)
+                ->setRule('bar')
+                ->setTags(['bif', 'fif']),
+            (new Filter())
+                ->setId(2)
+                ->setDescription('foo2')
+                ->setImpact(15)
+                ->setRule('bar2')
+                ->setTags(['bif2', 'fif2']),
+        ];
+        $listenerProvider = $this->createStub(ListenerProviderInterface::class);
+        $listenerProvider->method('getListenersForEvent')->willReturn([
+            new MockListener(),
+            new MockListener(),
+            new MockListener(),
+        ]);
+        $this->manager->setListenerProvider($listenerProvider);
+
+        $event = new FilterEvent($filters);
+        $rtn = $this->manager->dispatch($event);
+        $this->assertEquals($event, $rtn);
     }
 }
