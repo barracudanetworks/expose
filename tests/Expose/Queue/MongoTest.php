@@ -18,14 +18,8 @@ class MongoTest extends TestCase
         $this->test = new Mongo();
     }
 
-    public function ztestGetAdapter()
+    public function testGetAdapter()
     {
         $this->assertInstanceOf(Manager::class, $this->test->getAdapter());
-    }
-
-    /** @todo remove this */
-    public function testDummy()
-    {
-        $this->assertTrue(true);
     }
 }

@@ -90,5 +90,8 @@ The above project has not been maintained and is no longer compatible with curre
 
 Currently supported versions:
 - PHP 7.4
+- PHP 8.0
+- PHP 8.1
+- PHP 8.2
 
 ### Latest Changes
