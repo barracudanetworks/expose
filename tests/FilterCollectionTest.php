@@ -4,7 +4,7 @@ namespace Expose;
 
 use PHPUnit\Framework\TestCase;
 
-class FilterConnectionTest extends TestCase
+class FilterCollectionTest extends TestCase
 {
     /**
      * @var \Expose\FilterCollection
