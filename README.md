@@ -53,7 +53,7 @@ $filters = new \Expose\FilterCollection();
 $filters->load();
 
 //instantiate a PSR-3 compatible logger
-$logger = new \Expose\Log\Mongo();
+$logger = new Logger();
 
 $manager = new \Expose\Manager($filters, $logger);
 $manager->run($data);
@@ -95,3 +95,13 @@ Currently supported versions:
 - PHP 8.2
 
 ### Latest Changes
+In an effort to simplify the library, we limited dependencies to the following:
+- psr/log
+  - Allows the use of any logger library for PHP such as [monolog](https://packagist.org/packages/monolog/monolog)
+  - [Libraries supporting the standard.](https://packagist.org/providers/psr/log-implementation)
+- psr/simple-cache
+  - Allows for PHP cache providers that support PSR-16 and can use tools such as redis.
+  - [Libraries supporting the standard.](https://packagist.org/providers/psr/simple-cache-implementation)
+- psr/event-dispatcher
+  - Supporting an event-dispatcher standard allows applications that use this library to maintain how they want to use alerts and removed the requirement it supports MongoDB and Email.
+  - [Libraries supporting the standard.](https://packagist.org/providers/psr/event-dispatcher-implementation)

@@ -3,9 +3,12 @@
 namespace Expose;
 
 use Expose\MockListener;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\ListenerProviderInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Cache\Psr16Cache;
 
 class ManagerTest extends TestCase
 {
@@ -35,7 +38,7 @@ class ManagerTest extends TestCase
         $logger = $this->createStub(LoggerInterface::class);
         $manager = new Manager($filterCollection, $logger);
         $manager->setConfig(array('test' => 'foo'));
-        $manager->run($data, $queue, $notify);
+        $manager->run($data);
 
         return $manager;
     }
@@ -136,7 +139,7 @@ class ManagerTest extends TestCase
         $manager = new Manager($filterCollection, $logger);
         $manager->setImpactLimit(1);
         $manager->setConfig(array('test' => 'foo'));
-        $manager->run($data, false, false);
+        $manager->run($data);
 
         $this->assertEquals($manager->getImpact(), 2);
         $this->assertEquals(count($manager->getReports()), 1);
@@ -331,6 +334,7 @@ class ManagerTest extends TestCase
         $collection   = new FilterCollection();
         $collection->addFilter($filter);
 
+        /** @var Manager|MockObject $manager_mock */
         $manager_mock = $this->getMockBuilder('\\Expose\\Manager')
             ->setConstructorArgs(array($collection, $this->createStub(LoggerInterface::class)))
             ->setMethods(array('dispatch'))
@@ -352,17 +356,17 @@ class ManagerTest extends TestCase
         $collection   = new FilterCollection();
         $collection->addFilter($filter);
 
+        /** @var Manager|MockObject $manager_mock */
         $manager_mock = $this->getMockBuilder('\\Expose\\Manager')
             ->setConstructorArgs(array($collection, $this->createStub(LoggerInterface::class)))
-            ->setMethods(array('sendNotification'))
             ->getMock();
 
         $manager_mock
             ->expects($this->never())
-            ->method('sendNotification');
+            ->method('dispatch');
 
         $manager_mock->setThreshold(100);
-        $manager_mock->run(array('test' => 'test'), false, true);
+        $manager_mock->run(array('test' => 'test'));
     }
 
     public function testDispatch()
@@ -392,5 +396,17 @@ class ManagerTest extends TestCase
         $event = new FilterEvent($filters);
         $rtn = $this->manager->dispatch($event);
         $this->assertEquals($event, $rtn);
+    }
+
+    public function testCache()
+    {
+        $cache = new Psr16Cache(new ArrayAdapter());
+        $this->manager->setCache($cache);
+        $sig = "3d019fcda1f32b27680aeeb574b55541";
+        $data = ['test' => 'test'];
+        $rtn = $this->manager->run($data);
+        $this->assertTrue($rtn);
+        $rtn2 = $cache->get($sig);
+        $this->assertEquals([], $rtn2);
     }
 }

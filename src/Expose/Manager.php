@@ -130,9 +130,8 @@ class Manager implements LoggerAwareInterface, EventDispatcherInterface
         $restrictions = $this->getRestrictions();
         $sig = md5(print_r($data, true));
 
-        $cache = $this->getCache();
-        if ($cache !== null && $cache->has($sig)) {
-            return $cache->get($sig);
+        if ($this->cache !== null && $this->cache->has($sig)) {
+            return $this->cache->get($sig);
         }
 
         $data = new ArrayIterator($data);
@@ -180,8 +179,8 @@ class Manager implements LoggerAwareInterface, EventDispatcherInterface
             );
         }
 
-        if ($cache !== null) {
-            $cache->set($sig, $filterMatches);
+        if ($this->cache !== null) {
+            $this->cache->set($sig, $filterMatches);
         }
         return $filterMatches;
     }
@@ -488,16 +487,6 @@ class Manager implements LoggerAwareInterface, EventDispatcherInterface
     public function setCache(CacheInterface $cache)
     {
         $this->cache = $cache;
-    }
-
-    /**
-     * Get the current cache instance
-     *
-     * @return mixed Either a \Expose\Cache instance or null
-     */
-    public function getCache()
-    {
-        return $this->cache;
     }
 
     /**
