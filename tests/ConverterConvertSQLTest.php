@@ -4,7 +4,7 @@ namespace Expose\Converter;
 
 use PHPUnit\Framework\TestCase;
 
-class ConvertSQLTest extends TestCase
+class ConverterConvertSQLTest extends TestCase
 {
 
     /**

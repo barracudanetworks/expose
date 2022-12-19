@@ -2,7 +2,17 @@
 
 namespace Expose;
 
-class Manager
+use ArrayIterator;
+use Expose\Converter\Converter;
+use Expose\Exception\LoggerNotDefined;
+use InvalidArgumentException;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\EventDispatcher\ListenerProviderInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\SimpleCache\CacheInterface;
+
+class Manager implements LoggerAwareInterface, EventDispatcherInterface
 {
     /**
      * Data to run the filter validation rules on
@@ -12,7 +22,7 @@ class Manager
 
     /**
      * Set of filters to execute
-     * @var \Expose\FilterCollection
+     * @var FilterCollection
      */
     private $filters = null;
 
@@ -46,11 +56,7 @@ class Manager
      */
     private $restrctions = array();
 
-    /**
-     * Logger instance
-     * @var object
-     */
-    private $logger = null;
+    private LoggerInterface $logger;
 
     /**
      * Configuration object
@@ -58,49 +64,23 @@ class Manager
      */
     private $config = null;
 
-    /**
-     * Queue instance (extends \Expose\Queue)
-     * @var object
-     */
-    private $queue = null;
+    private int $threshold = 0;
 
-    /**
-     * Notify instance (for results notification)
-     * @var object
-     */
-    private $notify = null;
-
-    /**
-     * Threshold setting
-     * @var integer
-     */
-    private $threshold = null;
-
-    /**
-     * Caching mechanism
-     * @var \Expose\Cache
-     */
-    private $cache = null;
+    private ?CacheInterface $cache = null;
+    private ?ListenerProviderInterface $listenerProvider = null;
 
     /**
      * Init the object and assign the filters
      *
-     * @param \Expose\FilterCollection $filters Set of filters
+     * @param FilterCollection $filters Set of filters
      */
     public function __construct(
-        \Expose\FilterCollection $filters,
-        \Psr\Log\LoggerInterface $logger = null,
-        \Expose\Queue $queue = null
+        FilterCollection         $filters,
+        LoggerInterface $logger
     )
     {
         $this->setFilters($filters);
-
-        if ($logger !== null) {
-            $this->setLogger($logger);
-        }
-        if ($queue !== null) {
-            $this->setQueue($queue);
-        }
+        $this->setLogger($logger);
     }
 
     /**
@@ -108,23 +88,18 @@ class Manager
      *
      * @param array $data Data to run filters against
      */
-    public function run(array $data, $queueRequests = false, $notify = false)
+    public function run(array $data)
     {
         $this->getLogger()->info('Executing on data '.md5(print_r($data, true)));
-
-        if ($queueRequests === true) {
-            $this->logRequest($data);
-            return true;
-        }
 
         $this->setData($data);
         $data = $this->getData();
 
         // try to clean up standard filter bypass methods
-        $converter = new \Expose\Converter\Converter;
+        $converter = new Converter;
         foreach ($data as $key => $datum){
           if (!is_array($datum)){
-            $data[$key] = $converter->runAllConversions($data[$key]);
+            $data[$key] = $converter->runAllConversions($datum);
           }
         }
 
@@ -135,24 +110,8 @@ class Manager
         // Check our threshold to see if we even need to send
         $threshold = $this->getThreshold();
 
-        if ($threshold !== null && $impact >= $threshold && $notify === true) {
-            return $this->sendNotification($filterMatches);
-        } else if ($threshold === null && $notify === true) {
-            return $this->sendNotification($filterMatches);
-        }
-        return true;
-    }
-
-    /**
-     * Send the notification of the matching filters
-     *
-     * @param array $filterMatches Set of matching filter results
-     * @return boolean Success/fail of notification send
-     */
-    public function sendNotification($filterMatches)
-    {
-        if (count($filterMatches) > 0) {
-            return $this->notify($filterMatches);
+        if ($impact >= $threshold) {
+            $this->dispatch(new FilterEvent($filterMatches));
         }
         return true;
     }
@@ -163,7 +122,7 @@ class Manager
      * @param array $data Data to check
      * @param array $path Current "path" in the data
      * @param integer $lvl Current nesting level
-     * @return array Set of filter matches
+     * @return Filter[] Set of filter matches
      */
     public function runFilters($data, $path, $lvl = 0)
     {
@@ -171,15 +130,11 @@ class Manager
         $restrictions = $this->getRestrictions();
         $sig = md5(print_r($data, true));
 
-        $cache = $this->getCache();
-        if ($cache !== null) {
-            $cacheData = $cache->get($sig);
-            if ($cacheData !== null) {
-                return $cacheData;
-            }
+        if ($this->cache !== null && $this->cache->has($sig)) {
+            return $this->cache->get($sig);
         }
 
-        $data = new \ArrayIterator($data);
+        $data = new ArrayIterator($data);
         $data->rewind();
         while($data->valid() && !$this->impactLimitReached()) {
             $index = $data->key();
@@ -224,8 +179,8 @@ class Manager
             );
         }
 
-        if ($cache !== null) {
-            $cache->save($sig, $filterMatches);
+        if ($this->cache !== null) {
+            $this->cache->set($sig, $filterMatches);
         }
         return $filterMatches;
     }
@@ -292,79 +247,6 @@ class Manager
     }
 
     /**
-     * If enabled, send the notification of the test run
-     *
-     * @param array $filterMatches Set of matches against filters
-     * @throws \InvalidArgumentException If notify type is inavlid
-     */
-    public function notify(array $filterMatches)
-    {
-        $notify = $this->getNotify();
-        if ($notify === null) {
-            throw new \InvalidArgumentException(
-                'Invalid notification method'
-            );
-        }
-        $notify->send($filterMatches);
-    }
-
-    /**
-     * Log the request information
-     *
-     * @param array $requestData Request data
-     */
-    public function logRequest($requestData)
-    {
-        $queue = $this->getQueue();
-        $queue->add($requestData);
-    }
-
-    /**
-     * Get the current queue object
-     *     If none is set, throws an exception, we need it!
-     *
-     * @return object Queue instance
-     */
-    public function getQueue()
-    {
-        if ($this->queue === null) {
-            throw new \Expose\Exception\QueueNotDefined('Queue object is not defined');
-        }
-        return $this->queue;
-    }
-
-    /**
-     * Set the current queue object
-     *     Extends \Expose\Queue
-     *
-     * @param object $queue Queue instance
-     */
-    public function setQueue($queue)
-    {
-        $this->queue = $queue;
-    }
-
-    /**
-     * Set the notification method for the results
-     *
-     * @param \Expose\Notify $notify Notification object
-     */
-    public function setNotify($notify)
-    {
-	   $this->notify = $notify;
-    }
-
-    /**
-     * Get the notification method for the results
-     *
-     * @return \Expose\Notify instance
-     */
-    public function getNotify()
-    {
-	   return $this->notify;
-    }
-
-    /**
      * Get the current set of reports
      *
      * @return array Set of \Expose\Reports
@@ -417,9 +299,9 @@ class Manager
     /**
      * Set the filters for the current validation
      *
-     * @param \Expose\FilterCollection $filters Filter collection
+     * @param FilterCollection $filters Filter collection
      */
-    public function setFilters(\Expose\FilterCollection $filters)
+    public function setFilters(FilterCollection $filters)
     {
         $this->filters = $filters;
     }
@@ -427,7 +309,7 @@ class Manager
     /**
      * Get the current set of filters
      *
-     * @return \Expose\FilterCollection Filter collection
+     * @return FilterCollection Filter collection
      */
     public function getFilters()
     {
@@ -538,22 +420,13 @@ class Manager
      *
      * @param object $logger PSR-3 compatible Logger instance
      */
-    public function setLogger($logger)
+    public function setLogger(LoggerInterface $logger)
     {
         $this->logger = $logger;
     }
 
-    /**
-     * Get the current logger instance
-     *     If it's not set, throw an exception - we need it!
-     *
-     * @return object PSR-3 compatible logger object
-     */
-    public function getLogger()
+    public function getLogger(): LoggerInterface
     {
-        if ($this->logger === null) {
-            throw new \Expose\Exception\LoggerNotDefined('Logger instance not defined');
-        }
         return $this->logger;
     }
 
@@ -562,7 +435,7 @@ class Manager
      *
      * @param array|string $config Either an array of config settings
      *     or the path to the config file
-     * @throws \InvalidArgumentException If config file doesn't exist
+     * @throws InvalidArgumentException If config file doesn't exist
      */
     public function setConfig($config)
     {
@@ -574,7 +447,7 @@ class Manager
                 $cfg = parse_ini_file($config, true);
                 $this->config = new Config($cfg);
             } else {
-                throw new \InvalidArgumentException(
+                throw new InvalidArgumentException(
                     'Could not load configuration file '.$config
                 );
             }
@@ -594,7 +467,7 @@ class Manager
     public function setThreshold($threshold)
     {
         if (is_numeric($threshold) === false) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Invalid threshold "'.$threshold.'", must be numeric'
             );
         }
@@ -611,24 +484,9 @@ class Manager
         return $this->threshold;
     }
 
-    /**
-     * Set the cache object
-     *
-     * @param ExposeCache $cache Cache instance
-     */
-    public function setCache(\Expose\Cache $cache)
+    public function setCache(CacheInterface $cache)
     {
         $this->cache = $cache;
-    }
-
-    /**
-     * Get the current cache instance
-     *
-     * @return mixed Either a \Expose\Cache instance or null
-     */
-    public function getCache()
-    {
-        return $this->cache;
     }
 
     /**
@@ -645,5 +503,20 @@ class Manager
             return $export->render();
         }
         return null;
+    }
+
+    public function setListenerProvider(ListenerProviderInterface $listenerProvider): void
+    {
+        $this->listenerProvider = $listenerProvider;
+    }
+
+    public function dispatch(object $event): object
+    {
+        if (!is_null($this->listenerProvider)) {
+            foreach ($this->listenerProvider->getListenersForEvent($event) as $listener) {
+                $listener($event);
+            }
+        }
+        return $event;
     }
 }

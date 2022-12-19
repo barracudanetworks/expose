@@ -63,7 +63,7 @@ class ConvertSQL
         $value   = preg_replace($pattern, '!', $value);
         $value   = preg_replace('/"\s+\d/', '"', $value);
         $value   = preg_replace('/(\W)div(\W)/ims', '$1 OR $2', $value);
-        $value   = preg_replace('/\/(?:\d+|null)/', null, $value);
+        $value   = preg_replace('/\/(?:\d+|null)/', "", $value);
         return $value;
     }
 
