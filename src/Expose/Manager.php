@@ -76,11 +76,13 @@ class Manager implements LoggerAwareInterface, EventDispatcherInterface
      */
     public function __construct(
         FilterCollection         $filters,
-        LoggerInterface $logger
+        LoggerInterface $logger = null
     )
     {
         $this->setFilters($filters);
-        $this->setLogger($logger);
+        if (!is_null($logger)) {
+            $this->setLogger($logger);
+        }
     }
 
     /**
