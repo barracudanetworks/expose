@@ -6,9 +6,9 @@
     "homepage":"https://github.com/barracudanetworks/expose.git",
     "license":"MIT",
     "require":{
-        "php":">=7.4",
-        "psr/log": "~1.0|~2.0|~3.0",
-        "psr/simple-cache": "^1.0",
+        "php":">=8.0",
+        "psr/log": "~3.0",
+        "psr/simple-cache": "^3.0",
         "psr/event-dispatcher": "^1.0"
     },
     "require-dev" : {
