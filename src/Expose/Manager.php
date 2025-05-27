@@ -422,7 +422,7 @@ class Manager implements LoggerAwareInterface, EventDispatcherInterface
      *
      * @param object $logger PSR-3 compatible Logger instance
      */
-    public function setLogger(LoggerInterface $logger)
+    public function setLogger(LoggerInterface $logger): void
     {
         $this->logger = $logger;
     }
