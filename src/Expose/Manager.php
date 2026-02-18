@@ -64,6 +64,18 @@ class Manager implements LoggerAwareInterface, EventDispatcherInterface
      */
     private $config = null;
 
+    /**
+     * Log resource name (Ex. database table name)
+     * @var string|null
+     */
+    private $logResource = null;
+
+    /**
+     * Logging database name
+     * @var string|null
+     */
+    private $logDatabase = null;
+
     private int $threshold = 0;
 
     private ?CacheInterface $cache = null;
@@ -76,7 +88,7 @@ class Manager implements LoggerAwareInterface, EventDispatcherInterface
      */
     public function __construct(
         FilterCollection         $filters,
-        LoggerInterface $logger = null
+        ?LoggerInterface $logger = null
     )
     {
         $this->setFilters($filters);

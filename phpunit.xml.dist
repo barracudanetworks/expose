@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" convertErrorsToExceptions="true"
-         convertWarningsToExceptions="true" convertNoticesToExceptions="true" bootstrap="vendor/autoload.php"
-         verbose="true" colors="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd" failOnRisky="true">
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" bootstrap="vendor/autoload.php"
+         colors="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd" failOnRisky="true">
     <coverage processUncoveredFiles="true">
         <include>
             <directory suffix=".php">src</directory>

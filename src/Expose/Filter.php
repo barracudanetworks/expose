@@ -2,6 +2,7 @@
 
 namespace Expose;
 
+#[\AllowDynamicProperties]
 class Filter
 {
     /**
@@ -39,7 +40,7 @@ class Filter
      *
      * @param array $data Filter data [optional]
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         if ($data !== null) {
             $this->load($data);
