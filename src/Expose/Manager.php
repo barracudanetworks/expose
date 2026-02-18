@@ -66,13 +66,13 @@ class Manager implements LoggerAwareInterface, EventDispatcherInterface
 
     /**
      * Log resource name (Ex. database table name)
-     * @var string|null
+     * @var string
      */
     private $logResource = null;
 
     /**
      * Logging database name
-     * @var string|null
+     * @var string
      */
     private $logDatabase = null;
 
