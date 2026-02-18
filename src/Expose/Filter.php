@@ -38,7 +38,7 @@ class Filter
     /**
      * Init the filter and set the data if given
      *
-     * @param array $data Filter data [optional]
+     * @param array|null $data Filter data [optional]
      */
     public function __construct(?array $data = null)
     {
