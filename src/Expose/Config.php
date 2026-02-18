@@ -13,9 +13,9 @@ class Config
     /**
      * Init the object and set data if given
      *
-     * @param array $data Configuration data
+     * @param array|null $data Configuration data
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         if ($data !== null) {
             $this->load($data);

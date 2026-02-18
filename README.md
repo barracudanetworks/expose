@@ -89,10 +89,10 @@ Feel free to contact me with questions or how you can help the project!
 The above project has not been maintained and is no longer compatible with current versions of PHP.
 
 Currently supported versions:
-- PHP 7.4
-- PHP 8.0
 - PHP 8.1
 - PHP 8.2
+- PHP 8.3
+- PHP 8.4
 
 ### Latest Changes
 In an effort to simplify the library, we limited dependencies to the following:
